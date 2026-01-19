@@ -2,7 +2,8 @@
   "dependencies": {
     "express": "^5.2.1",
     "nodemon": "^3.1.11",
-    "websocket": "^1.0.35"
+    "websocket": "^1.0.35",
+    "ws": "^8.19.0"
   },
   "name": "websocketcanvas",
   "version": "1.0.0",
