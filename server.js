@@ -20,7 +20,7 @@ const wss = new WebSocketServer({ noServer: true });
 
 // Handskakning av WS connection
 server.on("upgrade", (req, socket, head) => {
-  console.log("event upgreade...");
+  //   console.log("event upgreade...");
 
   wss.handleUpgrade(req, socket, head, (ws) => {
     console.log("Client:", req.headers["user-agent"]);
@@ -35,18 +35,32 @@ server.on("upgrade", (req, socket, head) => {
 // event handlers
 // ------------------------------------------------------------
 wss.on("connection", (ws) => {
-  // Loggar anslutande klienter. Ska även visa när klienter lämnar
+  // Loggar anslutande klienter. Visar även när klienter lämnar
   console.log(`New client connected, total clients: ${wss.clients.size}`);
+
+  // Skicka till browserland
+  //   skicka och ta emot data, förutsatt att det är i JSON format
+
+  const obj = { msg: "New client connected" };
+
+  ws.send(JSON.stringify(obj));
+
+  //   Klienter lämnar
   ws.on("close", () => {
     console.log(`Client disconnected, total clients: ${wss.clients.size}`);
   });
-});
 
-const obj = {
-  type: "new_client",
-  msg: "New client connected",
-};
-// broadcast(wss, obj);
+  // Lyssnar på event "message"
+  ws.on("message", (data) => {
+    const obj = JSON.parse(data);
+
+    console.log(obj);
+
+    wss.clients.forEach((client) => {
+      client.send(JSON.stringify(obj));
+    });
+  });
+});
 
 // server start
 // ------------------------------------------------------------
