@@ -1,18 +1,20 @@
 // dependencies
 // ------------------------------------------------------------
-
-// Express import för server app
-// ------------------------------------------------------------
 import express from "express";
 import http from "http";
 import { WebSocketServer } from "ws";
+
 // miljövariabler
 // ------------------------------------------------------------
 const app = express();
+app.use(express.json());
+
+// statiska filer
 app.use(express.static("public"));
+
 const PORT = 3000;
 
-// http server
+// http server. Express skickas med som en instans i http servern
 const server = http.createServer(app);
 
 // WS server
@@ -29,7 +31,12 @@ server.on("upgrade", (req, socket, head) => {
   });
 });
 
+// Online status för användare. Ska matcha med användarnamnet som klienter skickar.
+
 // middleware
+// ------------------------------------------------------------
+
+// routes
 // ------------------------------------------------------------
 
 // event handlers
@@ -39,9 +46,9 @@ wss.on("connection", (ws) => {
   console.log(`New client connected, total clients: ${wss.clients.size}`);
 
   // Skicka till browserland
-  //   skicka och ta emot data, förutsatt att det är i JSON format
+  // skicka och ta emot data, förutsatt att det är i JSON format
 
-  const obj = { msg: "New client connected" };
+  const obj = { type: "new_client", msg: "New client connected" };
 
   ws.send(JSON.stringify(obj));
 
@@ -52,6 +59,7 @@ wss.on("connection", (ws) => {
 
   // Lyssnar på event "message"
   ws.on("message", (data) => {
+    // parse används för vi vet att det är i JSON format, annars felmeddelande. Kontrollera isf!
     const obj = JSON.parse(data);
 
     console.log(obj);
@@ -60,6 +68,10 @@ wss.on("connection", (ws) => {
       client.send(JSON.stringify(obj));
     });
   });
+
+  ws.onerror = (error) => {
+    console.log("WebSocket error;", error);
+  };
 });
 
 // server start

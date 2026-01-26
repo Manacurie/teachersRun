@@ -1,3 +1,37 @@
 body {
     font-family: 'poppins', sans-serif;
 }
+
+.hidden {
+    display: none;
+}
+
+#chat div.textMessage {
+    border: 1px solid black;
+    border-radius: 8px;
+}
+
+#chat div.other {
+    text-align: right;
+}
+
+#chatDisplay {
+    width: 300px;
+    height: 200px;
+    background-color: #ddd;
+    border: 1px solid black;
+}
+
+/* #game {
+    width: 300px;
+    height: 200px;
+    background-color: #ddd;
+    border: 1px solid black;
+} */
+
+#chat {
+    width: 300px;
+    height: 200px;
+    background-color: #ddd;
+    border: 1px solid black;
+}
