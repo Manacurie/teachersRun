@@ -25,7 +25,7 @@ gameCanvas.width = window.innerWidth;
 // WIP, definiera höjden senare för bättre upplevelse och design.
 gameCanvas.height = window.innerHeight;
 
-const gravity = 1.0;
+const gravity = 1;
 
 // Player
 class Player {
@@ -57,8 +57,8 @@ class Player {
 
 // Platform
 class Platform {
-  constructor() {
-    this.position = { x: 200, y: 100 };
+  constructor({ x, y }) {
+    this.position = { x, y };
 
     this.width = 200;
     this.height = 20;
@@ -70,7 +70,10 @@ class Platform {
 }
 
 const player = new Player();
-const platform = new Platform();
+const platforms = [
+  new Platform({ x: 200, y: 100 }),
+  new Platform({ x: 400, y: 200 }),
+];
 const keys = {
   w: { pressed: false },
   a: { pressed: false },
@@ -83,24 +86,41 @@ function animate() {
   requestAnimationFrame(animate);
   gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
   player.update();
-  platform.draw();
+  platforms.forEach((platform) => {
+    platform.draw();
+  });
 
-  if (keys.d.pressed) {
+  // moniter rörelse av spelare samt för scrollande av platformar/bakgrund
+  if (keys.d.pressed && player.position.x < 400) {
     player.velocity.x = 5;
-  } else if (keys.a.pressed) {
+  } else if (keys.a.pressed && player.position.x > 100) {
     player.velocity.x = -5;
-  } else player.velocity.x = 0;
+  } else {
+    player.velocity.x = 0;
+
+    if (keys.d.pressed) {
+      platforms.forEach((platform) => {
+        platform.position.x -= 5;
+      });
+    } else if (keys.a.pressed) {
+      platforms.forEach((platform) => {
+        platform.position.x += 5;
+      });
+    }
+  }
 
   // kollision med platformar
-  if (
-    player.position.y + player.height <= platform.position.y &&
-    player.position.y + player.height + player.velocity.y >=
-      platform.position.y &&
-    player.position.x + player.width >= platform.position.x &&
-    player.position.x <= platform.position.x + platform.width
-  ) {
-    player.velocity.y = 0;
-  }
+  platforms.forEach((platform) => {
+    if (
+      player.position.y + player.height <= platform.position.y &&
+      player.position.y + player.height + player.velocity.y >=
+        platform.position.y &&
+      player.position.x + player.width >= platform.position.x &&
+      player.position.x <= platform.position.x + platform.width
+    ) {
+      player.velocity.y = 0;
+    }
+  });
 }
 animate();
 
@@ -114,7 +134,7 @@ document.addEventListener("keydown", (e) => {
     switch (e.key.toLowerCase()) {
       case "w":
         keys.w.pressed = true;
-        player.velocity.y -= 10;
+        player.velocity.y -= 5;
         break;
       case "a":
         keys.a.pressed = true;
@@ -124,7 +144,6 @@ document.addEventListener("keydown", (e) => {
         break;
       case "d":
         keys.d.pressed = true;
-        player.velocity.x = 1;
         break;
     }
   }
