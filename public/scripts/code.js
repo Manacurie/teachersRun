@@ -43,8 +43,10 @@ class Player {
   // Vad som uppdateras med spelaren
   update() {
     this.render(gameCtx);
+    this.position.x += this.velocity.x;
     this.position.y += this.velocity.y;
 
+    // gravitation
     if (this.position.y + this.height + this.velocity.y <= gameCanvas.height) {
       this.velocity.y += gravity;
     } else {
@@ -54,12 +56,24 @@ class Player {
 }
 
 const player = new Player();
+const keys = {
+  w: { pressed: false },
+  a: { pressed: false },
+  s: { pressed: false },
+  d: { pressed: false },
+};
 
 // animation loop
 function animate() {
   requestAnimationFrame(animate);
   gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
   player.update();
+
+  if (keys.d.pressed) {
+    player.velocity.x = 5;
+  } else if (keys.a.pressed) {
+    player.velocity.x = -5;
+  } else player.velocity.x = 0;
 }
 animate();
 
@@ -72,14 +86,40 @@ document.addEventListener("keydown", (e) => {
     console.log(e.key);
     switch (e.key.toLowerCase()) {
       case "w":
+        keys.w.pressed = true;
+        player.velocity.y -= 10;
         break;
       case "a":
+        keys.a.pressed = true;
         break;
       case "s":
+        keys.s.pressed = true;
         break;
       case "d":
+        keys.d.pressed = true;
+        player.velocity.x = 1;
         break;
     }
+  }
+});
+
+document.addEventListener("keyup", (e) => {
+  console.log(e.key);
+  switch (e.key) {
+    case "w":
+      keys.w.pressed = false;
+      player.velocity.y -= 20;
+      break;
+    case "a":
+      keys.a.pressed = false;
+      break;
+    case "s":
+      keys.s.pressed = false;
+      break;
+    case "d":
+      keys.d.pressed = false;
+      player.velocity.x = 0;
+      break;
   }
 });
 
