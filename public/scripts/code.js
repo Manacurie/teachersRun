@@ -17,14 +17,22 @@ const gameCtx = gameCanvas.getContext("2d");
 // ------------------------------------------------------------
 const websocket = new WebSocket("ws://localhost:3000");
 
-// Canvas Game
+// Bildhämtning för spel
 // ------------------------------------------------------------
+const platformImage = new Image();
+const backgroundImage = new Image();
+const hillsImage = new Image();
+
+platformImage.src = "../images/platform.png";
+backgroundImage.src = "../images/background.png";
+hillsImage.src = "../images/hills.png";
 
 // Canvas storlek, fullscreen
-gameCanvas.width = window.innerWidth;
+gameCanvas.width = 1024;
 // WIP, definiera höjden senare för bättre upplevelse och design.
-gameCanvas.height = window.innerHeight;
+gameCanvas.height = 576;
 
+// Gravitation
 const gravity = 1;
 
 // Player
@@ -56,23 +64,51 @@ class Player {
 }
 
 // Platform
+
 class Platform {
-  constructor({ x, y }) {
+  constructor({ x, y, image }) {
     this.position = { x, y };
 
-    this.width = 200;
-    this.height = 20;
+    this.image = platformImage;
+
+    this.width = platformImage.width;
+    this.height = platformImage.height;
   }
   draw() {
-    gameCtx.fillStyle = "blue";
-    gameCtx.fillRect(this.position.x, this.position.y, this.width, this.height);
+    gameCtx.drawImage(this.image, this.position.x, this.position.y);
   }
+}
+
+// Generic object, för bakgrunden
+
+class GenericObjects {
+  constructor({ x, y, image }) {
+    this.position = { x, y };
+
+    this.image = image;
+
+    this.width = image.width;
+    this.height = image.height;
+  }
+  draw() {
+    gameCtx.drawImage(this.image, this.position.x, this.position.y);
+  }
+}
+
+function createImage(imageSrc) {
+  const image = new Image();
+  image.src = imageSrc;
+  return image;
 }
 
 const player = new Player();
 const platforms = [
-  new Platform({ x: 200, y: 100 }),
-  new Platform({ x: 400, y: 200 }),
+  new Platform({ x: -1, y: 470, image: platformImage }),
+  new Platform({
+    x: platformImage.width - 3,
+    y: 470,
+    image: platformImage,
+  }),
 ];
 const keys = {
   w: { pressed: false },
@@ -81,14 +117,35 @@ const keys = {
   d: { pressed: false },
 };
 
+const genericObjects = [
+  new GenericObjects({
+    x: 0,
+    y: 0,
+    image: backgroundImage,
+  }),
+  new GenericObjects({
+    x: 0,
+    y: 0,
+    image: hillsImage,
+  }),
+];
+
+// För att tracka "scrollning" som leder till vinst/spelets slut
+let scrollOffset = 0;
+
 // animation loop
 function animate() {
   requestAnimationFrame(animate);
   gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
-  player.update();
+
+  genericObjects.forEach((genericObject) => {
+    genericObject.draw();
+  });
+
   platforms.forEach((platform) => {
     platform.draw();
   });
+  player.update();
 
   // moniter rörelse av spelare samt för scrollande av platformar/bakgrund
   if (keys.d.pressed && player.position.x < 400) {
@@ -99,12 +156,20 @@ function animate() {
     player.velocity.x = 0;
 
     if (keys.d.pressed) {
+      scrollOffset += 5;
       platforms.forEach((platform) => {
         platform.position.x -= 5;
       });
+      genericObjects.forEach((genericObject) => {
+        genericObject.position.x -= 3;
+      });
     } else if (keys.a.pressed) {
+      scrollOffset -= 5;
       platforms.forEach((platform) => {
         platform.position.x += 5;
+      });
+      genericObjects.forEach((genericObject) => {
+        genericObject.position.x += 3;
       });
     }
   }
@@ -121,6 +186,11 @@ function animate() {
       player.velocity.y = 0;
     }
   });
+
+  // Win condition
+  if (scrollOffset > 2000) {
+    console.log("Mattias kom i tid!");
+  }
 }
 animate();
 

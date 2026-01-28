@@ -6,6 +6,20 @@ body {
     display: none;
 }
 
+#game {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: black;
+}
+
+canvas {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 #chat div.textMessage {
     border: 1px solid black;
     border-radius: 8px;
@@ -21,13 +35,6 @@ body {
     background-color: #ddd;
     border: 1px solid black;
 }
-
-/* #game {
-    width: 300px;
-    height: 200px;
-    background-color: #ddd;
-    border: 1px solid black;
-} */
 
 #chat {
     width: 300px;
