@@ -19,9 +19,9 @@ const websocket = new WebSocket("ws://localhost:3000");
 
 // Bildhämtning för spel
 // ------------------------------------------------------------
-const platformImage = new Image();
 const backgroundImage = new Image();
 const hillsImage = new Image();
+let platformImage = new Image();
 
 platformImage.src = "../images/platform.png";
 backgroundImage.src = "../images/background.png";
@@ -57,8 +57,6 @@ class Player {
     // gravitation
     if (this.position.y + this.height + this.velocity.y <= gameCanvas.height) {
       this.velocity.y += gravity;
-    } else {
-      this.velocity.y = 0;
     }
   }
 }
@@ -101,11 +99,16 @@ function createImage(imageSrc) {
   return image;
 }
 
-const player = new Player();
-const platforms = [
+let player = new Player();
+let platforms = [
   new Platform({ x: -1, y: 470, image: platformImage }),
   new Platform({
     x: platformImage.width - 3,
+    y: 470,
+    image: platformImage,
+  }),
+  new Platform({
+    x: platformImage.width * 2 + 100,
     y: 470,
     image: platformImage,
   }),
@@ -117,7 +120,7 @@ const keys = {
   d: { pressed: false },
 };
 
-const genericObjects = [
+let genericObjects = [
   new GenericObjects({
     x: 0,
     y: 0,
@@ -132,6 +135,42 @@ const genericObjects = [
 
 // För att tracka "scrollning" som leder till vinst/spelets slut
 let scrollOffset = 0;
+
+// Starta om spelet när spelaren förlorar (ramlar ner)
+function init() {
+  platformImage = new Image();
+  platformImage.src = "../images/platform.png";
+
+  player = new Player();
+  platforms = [
+    new Platform({ x: -1, y: 470, image: platformImage }),
+    new Platform({
+      x: platformImage.width - 3,
+      y: 470,
+      image: platformImage,
+    }),
+    new Platform({
+      x: platformImage.width * 2 + 100,
+      y: 470,
+      image: platformImage,
+    }),
+  ];
+
+  genericObjects = [
+    new GenericObjects({
+      x: 0,
+      y: 0,
+      image: backgroundImage,
+    }),
+    new GenericObjects({
+      x: 0,
+      y: 0,
+      image: hillsImage,
+    }),
+  ];
+
+  scrollOffset = 0;
+}
 
 // animation loop
 function animate() {
@@ -189,7 +228,12 @@ function animate() {
 
   // Win condition
   if (scrollOffset > 2000) {
-    console.log("Mattias kom i tid!");
+    console.log("Du hann i tid!");
+  }
+
+  // Lose condition
+  if (player.position.y > gameCanvas.height) {
+    init();
   }
 }
 animate();
