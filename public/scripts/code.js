@@ -22,10 +22,12 @@ const websocket = new WebSocket("ws://localhost:3000");
 const backgroundImage = new Image();
 const hillsImage = new Image();
 let platformImage = new Image();
+let platformSmallTall = new Image();
 
 platformImage.src = "../images/platform.png";
 backgroundImage.src = "../images/background.png";
 hillsImage.src = "../images/hills.png";
+platformSmallTall.src = "../images/platformSmallTall.png";
 
 // Canvas storlek, fullscreen
 gameCanvas.width = 1024;
@@ -38,6 +40,7 @@ const gravity = 1;
 // Player
 class Player {
   constructor() {
+    this.speed = 10;
     this.position = { x: 100, y: 100 };
     this.velocity = { x: 0, y: 0 };
     this.width = 50;
@@ -67,10 +70,10 @@ class Platform {
   constructor({ x, y, image }) {
     this.position = { x, y };
 
-    this.image = platformImage;
+    this.image = image;
 
-    this.width = platformImage.width;
-    this.height = platformImage.height;
+    this.width = image.width;
+    this.height = image.height;
   }
   draw() {
     gameCtx.drawImage(this.image, this.position.x, this.position.y);
@@ -100,38 +103,15 @@ function createImage(imageSrc) {
 }
 
 let player = new Player();
-let platforms = [
-  new Platform({ x: -1, y: 470, image: platformImage }),
-  new Platform({
-    x: platformImage.width - 3,
-    y: 470,
-    image: platformImage,
-  }),
-  new Platform({
-    x: platformImage.width * 2 + 100,
-    y: 470,
-    image: platformImage,
-  }),
-];
+let platforms = [];
+let genericObjects = [];
+
 const keys = {
   w: { pressed: false },
   a: { pressed: false },
   s: { pressed: false },
   d: { pressed: false },
 };
-
-let genericObjects = [
-  new GenericObjects({
-    x: 0,
-    y: 0,
-    image: backgroundImage,
-  }),
-  new GenericObjects({
-    x: 0,
-    y: 0,
-    image: hillsImage,
-  }),
-];
 
 // För att tracka "scrollning" som leder till vinst/spelets slut
 let scrollOffset = 0;
@@ -143,6 +123,16 @@ function init() {
 
   player = new Player();
   platforms = [
+    new Platform({
+      x:
+        platformImage.width * 4 +
+        300 -
+        2 +
+        platformImage.width -
+        platformSmallTall.width,
+      y: 270,
+      image: platformSmallTall,
+    }),
     new Platform({ x: -1, y: 470, image: platformImage }),
     new Platform({
       x: platformImage.width - 3,
@@ -151,6 +141,21 @@ function init() {
     }),
     new Platform({
       x: platformImage.width * 2 + 100,
+      y: 470,
+      image: platformImage,
+    }),
+    new Platform({
+      x: platformImage.width * 3 + 300,
+      y: 470,
+      image: platformImage,
+    }),
+    new Platform({
+      x: platformImage.width * 4 + 300 - 2,
+      y: 470,
+      image: platformImage,
+    }),
+    new Platform({
+      x: platformImage.width * 5 + 800 - 2,
       y: 470,
       image: platformImage,
     }),
@@ -188,27 +193,30 @@ function animate() {
 
   // moniter rörelse av spelare samt för scrollande av platformar/bakgrund
   if (keys.d.pressed && player.position.x < 400) {
-    player.velocity.x = 5;
-  } else if (keys.a.pressed && player.position.x > 100) {
-    player.velocity.x = -5;
+    player.velocity.x = player.speed;
+  } else if (
+    (keys.a.pressed && player.position.x > 100) ||
+    (keys.a.pressed && scrollOffset === 0 && player.position.x > 0)
+  ) {
+    player.velocity.x = -player.speed;
   } else {
     player.velocity.x = 0;
 
     if (keys.d.pressed) {
-      scrollOffset += 5;
+      scrollOffset += player.speed;
       platforms.forEach((platform) => {
-        platform.position.x -= 5;
+        platform.position.x -= player.speed;
       });
       genericObjects.forEach((genericObject) => {
-        genericObject.position.x -= 3;
+        genericObject.position.x -= player.speed * 0.66;
       });
-    } else if (keys.a.pressed) {
-      scrollOffset -= 5;
+    } else if (keys.a.pressed && scrollOffset > 0) {
+      scrollOffset -= player.speed;
       platforms.forEach((platform) => {
-        platform.position.x += 5;
+        platform.position.x += player.speed;
       });
       genericObjects.forEach((genericObject) => {
-        genericObject.position.x += 3;
+        genericObject.position.x += player.speed * 0.66;
       });
     }
   }
@@ -227,7 +235,7 @@ function animate() {
   });
 
   // Win condition
-  if (scrollOffset > 2000) {
+  if (scrollOffset > platformImage.width * 5 + 400 - 2) {
     console.log("Du hann i tid!");
   }
 
@@ -236,6 +244,8 @@ function animate() {
     init();
   }
 }
+
+init();
 animate();
 
 document.addEventListener("keydown", (e) => {
@@ -248,7 +258,7 @@ document.addEventListener("keydown", (e) => {
     switch (e.key.toLowerCase()) {
       case "w":
         keys.w.pressed = true;
-        player.velocity.y -= 5;
+        player.velocity.y -= 20;
         break;
       case "a":
         keys.a.pressed = true;
@@ -268,7 +278,6 @@ document.addEventListener("keyup", (e) => {
   switch (e.key) {
     case "w":
       keys.w.pressed = false;
-      player.velocity.y -= 20;
       break;
     case "a":
       keys.a.pressed = false;
