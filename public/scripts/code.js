@@ -1,21 +1,13 @@
 // DOM elements
 // ------------------------------------------------------------
-const formMessage = document.querySelector("#chatStage form");
-const formUsername = document.querySelector("#formUsername");
-const msgElement = document.querySelector("input#msg");
-const chatElement = document.querySelector("div#chat");
-const usernameElement = document.querySelector("#username");
-const chatStage = document.querySelector("#chatStage");
-const onlineUsersElement = chatStage.querySelector("code");
-const canvas = document.querySelector("canvas");
 const gameCanvas = document.querySelector("#game");
-
-const ctx = canvas.getContext("2d");
 const gameCtx = gameCanvas.getContext("2d");
+
+const dpr = window.devicePixelRatio || 1;
 
 // dependencies Websocket
 // ------------------------------------------------------------
-const websocket = new WebSocket("ws://localhost:3000");
+// WebSocket connection is now managed by connectToGame() function
 
 // Bildhämtning för spel
 // ------------------------------------------------------------
@@ -29,43 +21,26 @@ backgroundImage.src = "../images/background.png";
 hillsImage.src = "../images/hills.png";
 platformSmallTall.src = "../images/platformSmallTall.png";
 
-// Canvas storlek, fullscreen
-gameCanvas.width = 1024;
-// WIP, definiera höjden senare för bättre upplevelse och design.
-gameCanvas.height = 576;
+// Canvas storlek
+gameCanvas.width = 1024 * dpr;
+gameCanvas.height = 576 * dpr;
 
 // Gravitation
 const gravity = 1;
 
-// Player
-class Player {
-  constructor() {
-    this.speed = 10;
-    this.position = { x: 100, y: 100 };
-    this.velocity = { x: 0, y: 0 };
-    this.width = 50;
-    this.height = 50;
-  }
-  // Hur spelaren ser ut
-  render(gameCtx) {
-    gameCtx.fillStyle = "red";
-    gameCtx.fillRect(this.position.x, this.position.y, this.width, this.height);
-  }
-  // Vad som uppdateras med spelaren
-  update() {
-    this.render(gameCtx);
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
+// Player klass
+import Player from "./Player.js";
 
-    // gravitation
-    if (this.position.y + this.height + this.velocity.y <= gameCanvas.height) {
-      this.velocity.y += gravity;
-    }
-  }
-}
+// Multiplayer variables
+const players = []; // All players in the game
+let localPlayer = null; // The local player instance
+let localPlayerId = null; // Unique ID for local player
+let isGameJoined = false; // Track if we've joined the multiplayer game
+let gameWebSocket = null; // WebSocket connection
+
+// Vad som uppdateras med spelaren
 
 // Platform
-
 class Platform {
   constructor({ x, y, image }) {
     this.position = { x, y };
@@ -102,7 +77,7 @@ function createImage(imageSrc) {
   return image;
 }
 
-let player = new Player();
+let player = new Player(); // Legacy single-player (for non-multiplayer mode)
 let platforms = [];
 let genericObjects = [];
 
@@ -121,7 +96,10 @@ function init() {
   platformImage = new Image();
   platformImage.src = "../images/platform.png";
 
-  player = new Player();
+  // Initialize single-player mode if not in multiplayer
+  if (!isGameJoined) {
+    player = new Player();
+  }
   platforms = [
     new Platform({
       x:
@@ -178,59 +156,97 @@ function init() {
 }
 
 // animation loop
-function animate() {
+let lastTime = 0;
+
+function animate(currentTime = 0) {
+  if (lastTime === 0) lastTime = currentTime;
+  const deltaTime = (currentTime - lastTime) / 1000;
+  lastTime = currentTime;
+
   requestAnimationFrame(animate);
   gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
 
+  // Send periodic updates to server in multiplayer
+  if (isGameJoined) {
+    sendPeriodicUpdate(currentTime);
+  }
+
+  // Rita bakgrund
   genericObjects.forEach((genericObject) => {
     genericObject.draw();
   });
 
+  // Rita platformar
   platforms.forEach((platform) => {
     platform.draw();
   });
-  player.update();
 
-  // moniter rörelse av spelare samt för scrollande av platformar/bakgrund
-  if (keys.d.pressed && player.position.x < 400) {
-    player.velocity.x = player.speed;
-  } else if (
-    (keys.a.pressed && player.position.x > 100) ||
-    (keys.a.pressed && scrollOffset === 0 && player.position.x > 0)
-  ) {
-    player.velocity.x = -player.speed;
+  // Uppdatera och rita spelaren(a)
+  if (isGameJoined && localPlayer) {
+    // Multiplayer mode - update local player and render all players
+    localPlayer.update(gameCtx, gameCanvas, gravity, deltaTime, platforms);
+    
+    // Render all players
+    players.forEach(gamePlayer => {
+      if (gamePlayer.render) {
+        gamePlayer.render(gameCtx);
+      }
+    });
   } else {
-    player.velocity.x = 0;
+    // Single-player mode
+    player.update(gameCtx, gameCanvas, gravity, deltaTime, platforms);
+  }
+
+  // Monitor rörelse av spelare samt för scrollande av platformar/bakgrund
+  const currentPlayer = isGameJoined ? localPlayer : player;
+  
+  if (keys.d.pressed && currentPlayer.position.x < 400) {
+    currentPlayer.velocity.x = currentPlayer.speed;
+    currentPlayer.direction = "runRight";
+  } else if (
+    (keys.a.pressed && currentPlayer.position.x > 100) ||
+    (keys.a.pressed && scrollOffset === 0 && currentPlayer.position.x > 0)
+  ) {
+    currentPlayer.velocity.x = -currentPlayer.speed;
+    currentPlayer.direction = "runLeft";
+  } else {
+    currentPlayer.velocity.x = 0;
 
     if (keys.d.pressed) {
-      scrollOffset += player.speed;
+      scrollOffset += currentPlayer.speed;
       platforms.forEach((platform) => {
-        platform.position.x -= player.speed;
+        platform.position.x -= currentPlayer.speed;
       });
       genericObjects.forEach((genericObject) => {
-        genericObject.position.x -= player.speed * 0.66;
+        genericObject.position.x -= currentPlayer.speed * 0.66;
       });
     } else if (keys.a.pressed && scrollOffset > 0) {
-      scrollOffset -= player.speed;
+      scrollOffset -= currentPlayer.speed;
       platforms.forEach((platform) => {
-        platform.position.x += player.speed;
+        platform.position.x += currentPlayer.speed;
       });
       genericObjects.forEach((genericObject) => {
-        genericObject.position.x += player.speed * 0.66;
+        genericObject.position.x += currentPlayer.speed * 0.66;
       });
     }
   }
 
-  // kollision med platformar
+  // Set animation states based on movement and grounded status
+  if (currentPlayer.velocity.x === 0 && currentPlayer.velocity.y === 0) {
+    currentPlayer.direction =
+      currentPlayer.lastDirection === "runLeft" ? "idleLeft" : "idleRight";
+  }
+
+  // Platform collision
   platforms.forEach((platform) => {
     if (
-      player.position.y + player.height <= platform.position.y &&
-      player.position.y + player.height + player.velocity.y >=
+      currentPlayer.position.y + currentPlayer.height <= platform.position.y &&
+      currentPlayer.position.y + currentPlayer.height + currentPlayer.velocity.y >=
         platform.position.y &&
-      player.position.x + player.width >= platform.position.x &&
-      player.position.x <= platform.position.x + platform.width
+      currentPlayer.position.x + currentPlayer.width >= platform.position.x &&
+      currentPlayer.position.x <= platform.position.x + platform.width
     ) {
-      player.velocity.y = 0;
+      currentPlayer.velocity.y = 0;
     }
   });
 
@@ -240,8 +256,16 @@ function animate() {
   }
 
   // Lose condition
-  if (player.position.y > gameCanvas.height) {
-    init();
+  if (currentPlayer.position.y > gameCanvas.height) {
+    if (isGameJoined) {
+      // In multiplayer, respawn the local player
+      localPlayer.position.x = 100;
+      localPlayer.position.y = 100;
+      localPlayer.velocity.x = 0;
+      localPlayer.velocity.y = 0;
+    } else {
+      init();
+    }
   }
 }
 
@@ -249,27 +273,24 @@ init();
 animate();
 
 document.addEventListener("keydown", (e) => {
-  const isTyping =
-    document.activeElement === "input#msg" ||
-    document.activeElement === "input#username";
-
-  if (!isTyping) {
-    console.log(e.key);
-    switch (e.key.toLowerCase()) {
-      case "w":
-        keys.w.pressed = true;
-        player.velocity.y -= 20;
-        break;
-      case "a":
-        keys.a.pressed = true;
-        break;
-      case "s":
-        keys.s.pressed = true;
-        break;
-      case "d":
-        keys.d.pressed = true;
-        break;
-    }
+  console.log(e.key);
+  switch (e.key.toLowerCase()) {
+    case "w":
+      keys.w.pressed = true;
+      const jumpPlayer = isGameJoined ? localPlayer : player;
+      if (jumpPlayer) {
+        jumpPlayer.velocity.y -= 20;
+      }
+      break;
+    case "a":
+      keys.a.pressed = true;
+      break;
+    case "s":
+      keys.s.pressed = true;
+      break;
+    case "d":
+      keys.d.pressed = true;
+      break;
   }
 });
 
@@ -287,92 +308,168 @@ document.addEventListener("keyup", (e) => {
       break;
     case "d":
       keys.d.pressed = false;
-      player.velocity.x = 0;
+      const currentPlayerForStop = isGameJoined ? localPlayer : player;
+      if (currentPlayerForStop) {
+        currentPlayerForStop.velocity.x = 0;
+      }
       break;
   }
 });
 
-// ------------------------------------------------------------
-
 // variabler
 // ------------------------------------------------------------
-let username = "";
-// let authenticated = false;
-// let onlineUsers = [];
+
+// WebSocket functions
+// ------------------------------------------------------------
+function connectToGame() {
+  gameWebSocket = new WebSocket("ws://localhost:3000");
+  
+  gameWebSocket.addEventListener("open", () => {
+    console.log("Connected to game server");
+    // Send join request
+    const joinData = {
+      type: "join",
+      playerData: {
+        position: { x: 100, y: 100 },
+        velocity: { x: 0, y: 0 },
+        direction: "idleRight"
+      }
+    };
+    gameWebSocket.send(JSON.stringify(joinData));
+  });
+
+  gameWebSocket.addEventListener("message", (event) => {
+    const data = JSON.parse(event.data);
+    handleServerMessage(data);
+  });
+
+  gameWebSocket.addEventListener("error", (error) => {
+    console.error("WebSocket error:", error);
+  });
+
+  gameWebSocket.addEventListener("close", () => {
+    console.log("Disconnected from game server");
+    isGameJoined = false;
+    localPlayer = null;
+    localPlayerId = null;
+    players.length = 0;
+  });
+}
+
+function handleServerMessage(data) {
+  switch (data.type) {
+    case "welcome":
+      localPlayerId = data.playerId;
+      localPlayer = new Player({ x: 100, y: 100 });
+      localPlayer.id = localPlayerId;
+      isGameJoined = true;
+      
+      // Clear single-player mode
+      players.length = 0;
+      players.push(localPlayer);
+      
+      console.log("Joined game with ID:", localPlayerId);
+      break;
+      
+    case "playerJoined":
+      // Another player joined
+      if (data.playerId !== localPlayerId) {
+        const newPlayer = new Player(data.playerData.position);
+        newPlayer.id = data.playerId;
+        newPlayer.isRemote = true;
+        players.push(newPlayer);
+        console.log("Player joined:", data.playerId);
+      }
+      break;
+      
+    case "playerUpdate":
+      // Update remote player positions
+      const remotePlayer = players.find(p => p.id === data.playerId && p.id !== localPlayerId);
+      if (remotePlayer) {
+        remotePlayer.position.x = data.position.x;
+        remotePlayer.position.y = data.position.y;
+        remotePlayer.velocity.x = data.velocity.x;
+        remotePlayer.velocity.y = data.velocity.y;
+        remotePlayer.direction = data.direction;
+      }
+      break;
+      
+    case "gameState":
+      // Full game state update (for new joiners)
+      players.length = 0;
+      Object.keys(data.players).forEach(playerId => {
+        const playerData = data.players[playerId];
+        const gamePlayer = new Player(playerData.position);
+        gamePlayer.id = playerId;
+        gamePlayer.velocity = { ...playerData.velocity };
+        gamePlayer.direction = playerData.direction;
+        
+        if (playerId === localPlayerId) {
+          localPlayer = gamePlayer;
+        } else {
+          gamePlayer.isRemote = true;
+        }
+        players.push(gamePlayer);
+      });
+      break;
+      
+    case "playerLeft":
+      // Remove player who left
+      const playerIndex = players.findIndex(p => p.id === data.playerId);
+      if (playerIndex !== -1) {
+        players.splice(playerIndex, 1);
+        console.log("Player left:", data.playerId);
+      }
+      break;
+  }
+}
+
+function sendPlayerUpdate() {
+  if (gameWebSocket && gameWebSocket.readyState === WebSocket.OPEN && localPlayer) {
+    const updateData = {
+      type: "playerUpdate",
+      playerId: localPlayerId,
+      position: { ...localPlayer.position },
+      velocity: { ...localPlayer.velocity },
+      direction: localPlayer.direction
+    };
+    gameWebSocket.send(JSON.stringify(updateData));
+  }
+}
+
+// Send updates periodically
+let lastUpdateTime = 0;
+function sendPeriodicUpdate(currentTime) {
+  if (currentTime - lastUpdateTime > 50) { // Update every 50ms
+    sendPlayerUpdate();
+    lastUpdateTime = currentTime;
+  }
+}
 
 // event handlers/listeners
 // ------------------------------------------------------------
-
-formUsername.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const endpoint = "http://localhost:3000/login";
-
-  const options = {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ username: username }),
-  };
-
-  // fetch(endpoint, options)
-  //   .then((res) => res.json())
-  //   .then((data) => {
-  //     console.log("data", data);
-  //     if (data.success) {
-  //       username = usernameElement.value;
-  //       player = new Player(data.id, data.username);
-
-  //       usernameElement.setAttribute("disabled", true);
-  //       chatStage.classList.remove("hidden");
-
-  //       // Fokusera på medellande fältet direkt
-  //       msgElement.focus();
-
-  //       // Skicka meddelande till server om ny användare
-  //       const obj = { type: "new_user", username: username };
-  //       websocket.send(JSON.stringify(obj));
-  //     }
-  //   });
+joinGameButton.addEventListener("click", (event) => {
+  if (!isGameJoined) {
+    connectToGame();
+    joinGameButton.textContent = "Connecting...";
+    joinGameButton.disabled = true;
+    
+    // Re-enable button after connection attempt
+    setTimeout(() => {
+      if (isGameJoined) {
+        joinGameButton.textContent = "Leave Game";
+        joinGameButton.disabled = false;
+      } else {
+        joinGameButton.textContent = "Join Game";
+        joinGameButton.disabled = false;
+      }
+    }, 2000);
+  } else {
+    // Leave game
+    if (gameWebSocket) {
+      gameWebSocket.close();
+    }
+    joinGameButton.textContent = "Join Game";
+    joinGameButton.disabled = false;
+  }
 });
-
-formMessage.addEventListener("submit", (e) => {
-  e.preventDefault();
-  console.log("Prevented form submit");
-
-  // Skicka ett meddelande via websocket
-  const msg = msgElement.value;
-  const obj = { type: "text", msg: msg, username: username };
-
-  renderChatMessage(obj);
-
-  websocket.send(JSON.stringify(obj));
-
-  msgElement.value = "";
-  msgElement.focus();
-});
-
-// is typing? något att implementera senare
-// msgElement.addEventListener("keydown", (e) => {
-//     console.log("User is typing...")
-// })
-
-// Socket event handler, för att fånga meddelanden från servern
-websocket.addEventListener("message", (e) => {
-  const data = e.data; // plockar datan, meddelandet, från eventet
-
-  // skicka och ta emot data, förutsatt att det är i JSON format
-
-  const obj = JSON.parse(e.data);
-  console.log("obj", obj);
-
-  // renderChatMessage(obj);
-});
-
-// funktioner
-// ------------------------------------------------------------
-function renderChatMessage(obj) {
-  chatElement.innerText += obj.msg + "\n";
-}
-
-// socketplayer, gameLoop, renderPlayers

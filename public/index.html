@@ -8,48 +8,8 @@
   </head>
   <body>
     <h1>Teacher's Run</h1>
-
-    <!-- WIP Canvas för spelet läggs här, flyttas senare? -->
-    <!-- Chatten över spelet? -->
     <canvas id="game"></canvas>
-
-    <hr />
-    <h3>Chat</h3>
-    <p>Enter a username to start!</p>
-    <!-- Användare ska ange ett användarnamn som blir deras "username" -->
-    <!-- Visas vid deras karaktär samt i chatten när man skriver-->
-
-    <!-- Canvas för chat -->
-    <canvas width="300" height="200" id="chat"></canvas>
-    <form id="formUsername" action="">
-      <input
-        type="text"
-        name="username"
-        id="inputUsername"
-        placeholder="Who are you?"
-      />
-      <input type="submit" value="Enter" />
-    </form>
-
-    <section id="chatStage">
-      <h4>Online</h4>
-      <code>...</code>
-      <hr />
-      <form action="" id="formMessage">
-        <input
-          type="text"
-          name="msg"
-          id="msg"
-          placeholder="Write a message!"
-          required
-        />
-        <input type="submit" value="Send" />
-      </form>
-      <div id="chatDisplay">
-        <div id="textMessage"></div>
-      </div>
-    </section>
-
+    <button id="joinGameButton">Join Game</button>
     <script src="scripts/code.js" type="module"></script>
   </body>
 </html>
