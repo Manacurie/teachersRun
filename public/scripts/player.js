@@ -8,15 +8,15 @@ class Player {
     this.speed = 10;
     this.position = { x: startPosition.x, y: startPosition.y };
     this.velocity = { x: 0, y: 0 };
-    this.width = 48;
-    this.height = 60;
+    this.width = 64;
+    this.height = 80;
     this.image = new Image();
 
     // Sprite baserat på spelare
     if (spriteType === "madde") {
-      this.image.src = "../images/maddeLarge.png";
+      this.image.src = "../images/maddeX4.png";
     } else {
-      this.image.src = "../images/mattiasLarge2.png";
+      this.image.src = "../images/mattiasX4.png";
     }
 
     this.id = null;
@@ -24,8 +24,8 @@ class Player {
     this.spriteType = spriteType;
 
     // Animation
-    this.frameWidth = 16 * 3;
-    this.frameHeight = 20 * 3;
+    this.frameWidth = 16 * 4;
+    this.frameHeight = 20 * 4;
     this.currentFrame = 0;
     this.frameCount = 4;
     this.animationSpeed = 0.2;
@@ -55,7 +55,7 @@ class Player {
 
       this.position.x += this.velocity.x;
       this.position.y += this.velocity.y;
-
+      
       // Gravitation
       if (
         this.position.y + this.height + this.velocity.y <=
@@ -143,8 +143,8 @@ class Player {
       this.frameHeight,
       this.position.x - camera.x,
       this.position.y - camera.y,
-      48,
-      60,
+      this.width,
+      this.height,
     );
   }
 }

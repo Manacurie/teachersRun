@@ -18,12 +18,14 @@ winSound.volume = 0.5;
 // ------------------------------------------------------------
 const backgroundImage = new Image();
 const hillsImage = new Image();
+const schoolImage = new Image();
 let platformImage = new Image();
 let platformSmallTall = new Image();
 
-platformImage.src = "../images/platform.png";
+platformImage.src = "../images/platformPixel.png";
 backgroundImage.src = "../images/background.png";
 hillsImage.src = "../images/hills.png";
+schoolImage.src = "../images/glimmis.png";
 platformSmallTall.src = "../images/platformSmallTall.png";
 
 // Canvas storlek
@@ -111,7 +113,7 @@ let scrollOffset = 0;
 // Starta om spelet när spelaren förlorar (ramlar ner)
 function init() {
   platformImage = new Image();
-  platformImage.src = "../images/platform.png";
+  platformImage.src = "../images/platformPixel.png";
 
   // Singleplayer läge
   if (!isGameJoined) {
@@ -145,6 +147,8 @@ function init() {
       y: 170,
       image: platformSmallTall,
     }),
+
+
     // Vanliga plafformar
     new Platform({ x: -1, y: 470, image: platformImage }),
     new Platform({
@@ -211,6 +215,12 @@ function init() {
       x: platformImage.width * 14 + 3400 - 2,
       y: 470,
       image: platformImage,
+    }),
+    // Skola på slutplatformen
+    new Platform({
+      x: platformImage.width * 14 + 3400 - 2,
+      y: -25,
+      image: schoolImage,
     }),
   ];
 
@@ -401,14 +411,14 @@ function animate(currentTime = 0) {
   if (
     isGameJoined &&
     localPlayer &&
-    localPlayer.position.x > platformImage.width * 14 + 3400
+    localPlayer.position.x > platformImage.width * 14 + 3800
   ) {
     document.getElementById("winText").style.visibility = "visible";
     winSound.play().catch((e) => console.log("Audio play failed:", e));
   } else if (
     !isGameJoined &&
     player &&
-    player.position.x > platformImage.width * 14 + 3400
+    player.position.x > platformImage.width * 14 + 3800
   ) {
     document.getElementById("winText").style.visibility = "visible";
     winSound.play().catch((e) => console.log("Audio play failed:", e));
