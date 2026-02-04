@@ -481,7 +481,7 @@ document.addEventListener("keyup", (e) => {
 // WebSocket functions
 // ------------------------------------------------------------
 function connectToGame() {
-  gameWebSocket = new WebSocket("ws://localhost:3000");
+  gameWebSocket = new WebSocket("ws://teachersrun.netlify.app");
 
   gameWebSocket.addEventListener("open", () => {
     console.log("Connected to game server");
