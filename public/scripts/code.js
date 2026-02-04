@@ -3,8 +3,13 @@
 const gameCanvas = document.querySelector("#game");
 const gameCtx = gameCanvas.getContext("2d");
 
-const dpr = window.devicePixelRatio || 1;
+// Dependencies
+const backendHost = "https://teachersrun.onrender.com";
+const websocket = new WebSocket(`wss://${backendHost}`);
+const endpoint = `${backendHost}`;
 
+const dpr = window.devicePixelRatio || 1;
+  
 // Ljud vid vinst
 const winSound = new Audio("../sounds/winSound.mp3");
 winSound.volume = 0.5;
