@@ -14,7 +14,7 @@ class Player {
 
     // Sprite baserat på spelare
     if (spriteType === "madde") {
-      this.image.src = "../images/maddeImage.png";
+      this.image.src = "../images/maddeLarge.png";
     } else {
       this.image.src = "../images/mattiasLarge2.png";
     }
