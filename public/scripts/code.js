@@ -118,6 +118,8 @@ function init() {
     player = new Player();
   }
   platforms = [
+    // Högre platformar läggs här för att hamna bakom de lägre
+    // detta baseras på när de ritas ut.
     new Platform({
       x:
         platformImage.width * 4 +
@@ -128,6 +130,22 @@ function init() {
       y: 270,
       image: platformSmallTall,
     }),
+    new Platform({
+      x: platformImage.width * 8 + 1200,
+      y: 270,
+      image: platformSmallTall,
+    }),
+    new Platform({
+      x: platformImage.width * 11 + 3000,
+      y: 270,
+      image: platformSmallTall,
+    }),
+    new Platform({
+      x: platformImage.width * 12 + 3000,
+      y: 170,
+      image: platformSmallTall,
+    }),
+    // Vanliga plafformar
     new Platform({ x: -1, y: 470, image: platformImage }),
     new Platform({
       x: platformImage.width - 3,
@@ -151,6 +169,46 @@ function init() {
     }),
     new Platform({
       x: platformImage.width * 5 + 800 - 2,
+      y: 470,
+      image: platformImage,
+    }),
+    new Platform({
+      x: platformImage.width * 6 + 1150 - 2,
+      y: 470,
+      image: platformImage,
+    }),
+    new Platform({
+      x: platformImage.width * 7 + 1300 - 2,
+      y: 470,
+      image: platformSmallTall,
+    }),
+    new Platform({
+      x: platformImage.width * 8 + 1700 - 2,
+      y: 470,
+      image: platformSmallTall,
+    }),
+    new Platform({
+      x: platformImage.width * 9 + 1800 - 2,
+      y: 470,
+      image: platformImage,
+    }),
+    new Platform({
+      x: platformImage.width * 10 + 2200 - 2,
+      y: 470,
+      image: platformImage,
+    }),
+    new Platform({
+      x: platformImage.width * 11 + 2300 - 2,
+      y: 470,
+      image: platformImage,
+    }),
+    new Platform({
+      x: platformImage.width * 13 + 3000 - 2,
+      y: 470,
+      image: platformImage,
+    }),
+    new Platform({
+      x: platformImage.width * 14 + 3400 - 2,
       y: 470,
       image: platformImage,
     }),
@@ -195,71 +253,6 @@ function updateCamera(followPlayer) {
 
   // Begränsa kameran från att gå utanför vänstra kanten
   camera.x = Math.max(0, camera.x);
-}
-
-// Init platformar och objekt
-function initPlatforms() {
-  platforms = [
-    new Platform({
-      x:
-        platformImage.width * 4 +
-        300 -
-        2 +
-        platformImage.width -
-        platformSmallTall.width,
-      y: 270,
-      image: platformSmallTall,
-    }),
-    new Platform({ x: -1, y: 470, image: platformImage }),
-    new Platform({
-      x: platformImage.width - 3,
-      y: 470,
-      image: platformImage,
-    }),
-    new Platform({
-      x: platformImage.width * 2 + 100,
-      y: 470,
-      image: platformImage,
-    }),
-    new Platform({
-      x: platformImage.width * 3 + 300,
-      y: 470,
-      image: platformImage,
-    }),
-    new Platform({
-      x: platformImage.width * 4 + 300 - 2,
-      y: 470,
-      image: platformImage,
-    }),
-    new Platform({
-      x: platformImage.width * 5 + 800 - 2,
-      y: 470,
-      image: platformImage,
-    }),
-  ];
-
-  genericObjects = [
-    new GenericObjects({
-      x: 0,
-      y: 0,
-      image: backgroundImage,
-    }),
-    new GenericObjects({
-      x: backgroundImage.width,
-      y: 0,
-      image: backgroundImage,
-    }),
-    new GenericObjects({
-      x: 0,
-      y: 0,
-      image: hillsImage,
-    }),
-    new GenericObjects({
-      x: hillsImage.width,
-      y: 0,
-      image: hillsImage,
-    }),
-  ];
 }
 
 // animation loop
@@ -403,21 +396,21 @@ function animate(currentTime = 0) {
   // Win condition
   // AI genererad kod. Använt Claude Sonnet i VS Code.
   // Första win scenariot var baserat på scrollOffset. Detta fungerade inte med
-  // multiplayer och behövdes ändras. Nu baseras det på spelarens position. 
+  // multiplayer och behövdes ändras. Nu baseras det på spelarens position.
   // Skapades en bugg där spelare 1 "puttade" spelare två med sig och vise versa
   if (
     isGameJoined &&
     localPlayer &&
-    localPlayer.position.x > platformImage.width * 5 + 800
+    localPlayer.position.x > platformImage.width * 14 + 3400
   ) {
-    console.log("Du hann i tid!");
+    document.getElementById("winText").style.visibility = "visible";
     winSound.play().catch((e) => console.log("Audio play failed:", e));
   } else if (
     !isGameJoined &&
     player &&
-    player.position.x > platformImage.width * 5 + 800
+    player.position.x > platformImage.width * 14 + 3400
   ) {
-    console.log("Du hann i tid!");
+    document.getElementById("winText").style.visibility = "visible";
     winSound.play().catch((e) => console.log("Audio play failed:", e));
   }
 
@@ -427,16 +420,31 @@ function animate(currentTime = 0) {
     localPlayer &&
     localPlayer.position.y > gameCanvas.height
   ) {
+    // Reset local player
     localPlayer.position.x = 100;
     localPlayer.position.y = 100;
     localPlayer.velocity.x = 0;
     localPlayer.velocity.y = 0;
 
+    // Reset camera & scroll
     camera.x = 0;
     camera.y = 0;
-
     scrollOffset = 0;
-    initPlatforms();
+
+    // Reinit platformar och bakgrund
+    const wasGameJoined = isGameJoined;
+    const savedLocalPlayer = localPlayer;
+    const savedLocalPlayerId = localPlayerId;
+    const savedPlayers = [...players];
+
+    init();
+
+    // Återställ multiplayer state
+    isGameJoined = wasGameJoined;
+    localPlayer = savedLocalPlayer;
+    localPlayerId = savedLocalPlayerId;
+    players.length = 0;
+    players.push(...savedPlayers);
   } else if (!isGameJoined && player && player.position.y > gameCanvas.height) {
     init();
   }
@@ -452,7 +460,7 @@ document.addEventListener("keydown", (e) => {
         keys.w.justPressed = true;
       }
       keys.w.pressed = true;
-      // AI genererad kod. Använt Claude Sonnet i VS Code. 
+      // AI genererad kod. Använt Claude Sonnet i VS Code.
       // Kontroll för att enbart kunna hoppa en gång.
 
       const jumpPlayer = isGameJoined ? localPlayer : player;

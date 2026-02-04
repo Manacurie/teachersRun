@@ -6,18 +6,20 @@ body {
     display: none;
 }
 
+#winText {
+    visibility: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'poppins', sans-serif;
+}
+
 #game {
     margin: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     background-color: black;
-}
-
-canvas {
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 #chat div.textMessage {
