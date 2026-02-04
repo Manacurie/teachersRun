@@ -387,6 +387,10 @@ function animate(currentTime = 0) {
       });
 
       // Uppdatera grounded state och animation efter kollisions
+      // AI genererad kod. Använt Claude Sonnet i VS Code. Önskade att spelarens animation
+      // ändrades och passade in med vilket håll spelaren senast "tittade" åt. För en bättre
+      // spelupplevelse.
+
       if (currentPlayer.updateGroundedState) {
         currentPlayer.updateGroundedState();
       }
@@ -397,6 +401,10 @@ function animate(currentTime = 0) {
   }
 
   // Win condition
+  // AI genererad kod. Använt Claude Sonnet i VS Code.
+  // Första win scenariot var baserat på scrollOffset. Detta fungerade inte med
+  // multiplayer och behövdes ändras. Nu baseras det på spelarens position. 
+  // Skapades en bugg där spelare 1 "puttade" spelare två med sig och vise versa
   if (
     isGameJoined &&
     localPlayer &&
@@ -438,13 +446,14 @@ init();
 animate();
 
 document.addEventListener("keydown", (e) => {
-  console.log(e.key);
   switch (e.key.toLowerCase()) {
     case "w":
       if (!keys.w.pressed) {
         keys.w.justPressed = true;
       }
       keys.w.pressed = true;
+      // AI genererad kod. Använt Claude Sonnet i VS Code. 
+      // Kontroll för att enbart kunna hoppa en gång.
 
       const jumpPlayer = isGameJoined ? localPlayer : player;
       if (jumpPlayer && keys.w.justPressed && jumpPlayer.isGrounded) {
@@ -465,7 +474,6 @@ document.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("keyup", (e) => {
-  console.log(e.key);
   switch (e.key) {
     case "w":
       keys.w.pressed = false;
@@ -485,6 +493,9 @@ document.addEventListener("keyup", (e) => {
 
 // WebSocket functions
 // ------------------------------------------------------------
+// AI genererad kod. Använt Claude Sonnet i VS Code.
+// Låg efter med WebSocket delen och tog hjälp av AI för att komma ikapp
+// och kunna arbeta med ett mer komplett spel.
 function connectToGame() {
   gameWebSocket = new WebSocket(`wss://${backendHost}`);
 
@@ -520,6 +531,8 @@ function connectToGame() {
   });
 }
 
+// AI genererad kod. Använt Claude Sonnet i VS Code.
+// Samma anledning som ovan.
 function handleServerMessage(data) {
   switch (data.type) {
     case "welcome":
