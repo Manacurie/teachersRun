@@ -22,7 +22,7 @@ const schoolImage = new Image();
 let platformImage = new Image();
 let platformSmallTall = new Image();
 
-platformImage.src = "../images/platformPixel.png";
+platformImage.src = "../images/platformPixel2.png";
 backgroundImage.src = "../images/background.png";
 hillsImage.src = "../images/hills.png";
 schoolImage.src = "../images/glimmis.png";
@@ -113,7 +113,7 @@ let scrollOffset = 0;
 // Starta om spelet när spelaren förlorar (ramlar ner)
 function init() {
   platformImage = new Image();
-  platformImage.src = "../images/platformPixel.png";
+  platformImage.src = "../images/platformPixel2.png";
 
   // Singleplayer läge
   if (!isGameJoined) {
@@ -147,7 +147,6 @@ function init() {
       y: 170,
       image: platformSmallTall,
     }),
-
 
     // Vanliga plafformar
     new Platform({ x: -1, y: 470, image: platformImage }),
@@ -211,16 +210,16 @@ function init() {
       y: 470,
       image: platformImage,
     }),
+    // Skola på slutplatformen
+    new Platform({
+      x: platformImage.width * 14 + 3400 - 2,
+      y: -26,
+      image: schoolImage,
+    }),
     new Platform({
       x: platformImage.width * 14 + 3400 - 2,
       y: 470,
       image: platformImage,
-    }),
-    // Skola på slutplatformen
-    new Platform({
-      x: platformImage.width * 14 + 3400 - 2,
-      y: -25,
-      image: schoolImage,
     }),
   ];
 
@@ -272,6 +271,8 @@ function animate(currentTime = 0) {
   if (lastTime === 0) lastTime = currentTime;
   const deltaTime = (currentTime - lastTime) / 1000;
   lastTime = currentTime;
+
+  gameCtx.setTransform(1, 0, 0, 1, 0, 0);
 
   requestAnimationFrame(animate);
   gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
